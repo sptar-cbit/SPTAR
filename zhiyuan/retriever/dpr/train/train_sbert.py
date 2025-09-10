@@ -20,20 +20,21 @@ from beir.retrieval.train import TrainRetriever
 import pathlib, os
 import logging
 import argparse
-from os.path import join
+from os.path import join, dirname, abspath
 import math
 import sys
 ####
-cwd = os.getcwd()
-if join(cwd, "zhiyuan") not in sys.path:
-    sys.path.append(join(cwd, "zhiyuan"))
-    sys.path.append(join(cwd, "xuyang"))
+zhiyuan_path = dirname(dirname(dirname(dirname(abspath(__file__)))))
+if zhiyuan_path not in sys.path:
+    sys.path.append(zhiyuan_path)
+
 from weak_data_loader import WeakDataLoader
-data_dir = join(cwd, "zhiyuan", "datasets")
+
+data_dir = join(zhiyuan_path, "datasets")
 raw_dir = join(data_dir, "raw")
 weak_dir = join(data_dir, "weak")
 beir_dir = join(raw_dir, "beir")
-xuyang_dir = join(cwd, "xuyang", "data")
+xuyang_dir = join(dirname(zhiyuan_path), "xuyang", "data")
 
 #### Download nfcorpus.zip dataset and unzip the dataset
 
