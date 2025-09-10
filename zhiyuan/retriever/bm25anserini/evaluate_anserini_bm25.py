@@ -120,7 +120,7 @@ if not args.skip_retrieval:
 
     #### Evaluate your retrieval using NDCG@k, MAP@K ...
     logging.info("Retriever evaluation for k in: {}".format(retriever.k_values))
-    ndcg, map, recall, _, score_per_query= retriever.evaluate(qrels, results, retriever.k_values)
+    ndcg, map, recall, score_per_query= retriever.evaluate(qrels, results, retriever.k_values)
     if args.dataset_name == "dl2019" or args.dataset_name == "dl2020":
         _, map, recall, _, score_per_query_override = retriever.evaluate(qrels_binary, results, retriever.k_values)
         for key in score_per_query.keys():
@@ -129,9 +129,10 @@ if not args.skip_retrieval:
             if "Recall" in key:
                 score_per_query[key] = score_per_query_override[key]
     else:
-        mrr, mrr_score = retriever.evaluate_custom(qrels, results, retriever.k_values, metric="mrr")
+        mrr_score = retriever.evaluate_custom(qrels, results, retriever.k_values, metric="mrr")
         for key in mrr_score.keys():
             score_per_query[key] = mrr_score[key]
+
     for eval in [ndcg, map, recall]:
             logging.info("\n")
             for k in eval.keys():
