@@ -13,6 +13,7 @@ Running this script:
 python train_sbert.py
 '''
 
+import torch
 from sentence_transformers import losses, models, SentenceTransformer
 from beir import util, LoggingHandler
 from beir.datasets.data_loader import GenericDataLoader
@@ -24,6 +25,9 @@ from os.path import join, dirname, abspath
 import math
 import sys
 ####
+print("Started",flush=True)
+print("Started without flush")
+
 zhiyuan_path = dirname(dirname(dirname(dirname(abspath(__file__)))))
 if zhiyuan_path not in sys.path:
     sys.path.append(zhiyuan_path)
@@ -40,7 +44,7 @@ xuyang_dir = join(dirname(zhiyuan_path), "xuyang", "data")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset_name', required=False, default="msmarco", type=str)
-parser.add_argument('--num_epochs', required=False, default=20, type=int)
+parser.add_argument('--num_epochs', required=False, default=2, type=int)
 parser.add_argument('--train_num', required=False, default=50, type=int)
 parser.add_argument('--weak_num', required=False, default="5000", type=str)
 parser.add_argument('--product', required=False, default="cosine", type=str)
@@ -72,12 +76,13 @@ dev_corpus, dev_queries, dev_qrels = GenericDataLoader(corpus_file=join(beir_dir
 #### Provide any sentence-transformers or HF model
 word_embedding_model = models.Transformer(model_name, max_seq_length=350)
 pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
-model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)
 
 #### Or provide pretrained sentence-transformer model
 # model = SentenceTransformer("msmarco-distilbert-base-v3")
-
-retriever = TrainRetriever(model=model, batch_size=32)
+print(device)
+retriever = TrainRetriever(model=model, batch_size=16)
 
 #### Prepare training samples
 train_samples = retriever.load_train(corpus, queries, qrels)
@@ -93,6 +98,8 @@ elif args.product == "dot":
     score_functions = {'dot_score': util.dot_score}
 #### Prepare dev evaluator
 corpus_chunk_size=100000
+print("IR evaluation without flush")
+print("IR evaluation",flush=True)
 ir_evaluator = retriever.load_ir_evaluator(dev_corpus, dev_queries, dev_qrels, name="dev")
 
 #### If no dev set is present from above use dummy evaluator
@@ -105,10 +112,13 @@ num_epochs = args.num_epochs
 evaluation_steps = -1
 warmup_steps = int(len(train_samples) * num_epochs / retriever.batch_size * 0.1)
 
+print(">>> Starting training now...", flush=True)
 retriever.fit(train_objectives=[(train_dataloader, train_loss)], 
                 evaluator=ir_evaluator, 
                 epochs=num_epochs,
                 output_path=model_save_path,
                 warmup_steps=warmup_steps,
                 evaluation_steps=evaluation_steps,
-                use_amp=True)
+                use_amp=True,
+                callback=lambda score, epoch, steps: print(f"[Epoch {epoch} | Step {steps}] Eval score: {score}", flush=True)
+)
