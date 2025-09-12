@@ -93,7 +93,7 @@ elif args.product == "dot":
     score_functions = {'dot_score': util.dot_score}
 #### Prepare dev evaluator
 corpus_chunk_size=100000
-ir_evaluator = retriever.load_ir_evaluator(dev_corpus, dev_queries, dev_qrels, corpus_chunk_size=corpus_chunk_size, score_functions=score_functions)
+ir_evaluator = retriever.load_ir_evaluator(dev_corpus, dev_queries, dev_qrels, name="dev")
 
 #### If no dev set is present from above use dummy evaluator
 # ir_evaluator = retriever.load_dummy_evaluator()
@@ -111,5 +111,4 @@ retriever.fit(train_objectives=[(train_dataloader, train_loss)],
                 output_path=model_save_path,
                 warmup_steps=warmup_steps,
                 evaluation_steps=evaluation_steps,
-                use_amp=True,
-                patience_epoch=10)
+                use_amp=True)
